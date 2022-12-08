@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1" />
+    <title>Asynchronous request</title>
+    <style>
+        body {
+            background-color: #e4f0f9;
+        }
+        .form {
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .img-number {
+            display: block;
+            padding: 5px 2px;
+            margin: 10px 0;
+        }
+        .btn {
+            padding: 5px 10px;
+            display: block;
+            cursor: pointer;
+            margin: auto;
+        }
+        .images {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .image {
+            max-width: 200px;
+        }
+        .error {
+            margin: auto;
+            width: fit-content;
+            padding: 10px;
+            border-radius: 2px;
+            background-color: #FFACAF;
+        }
+        .hide {
+            display: none;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let apiUrl = 'https://picsum.photos/v2/list';
+            let imagesNode = document.querySelector('.images');
+            let pageInput = document.querySelector('.input1');
+            let imgInput = document.querySelector('.input2');
+            let errorNode = document.querySelector('.error');
+            const requestBtn = document.querySelector('.btn');
+            
+            restoreData();
+
+            function getImages(url, callback) {
+                return fetch(url)
+                    .then((response) => response.json())
+                    .then((json) => {
+                        if(callback) {
+                            callback(json);
+                            return true; 
+                        }   
+                        return false;
+                    })
+                    .catch((error) => {
+                        let errorText = `Ошибка: ${error}`;
+                        showError(errorText);
+                    });
+            }
+
+            function insertImages(json) {
+                let images = '';
+
+                json.forEach(item => {
+                    let image = `
+                        <figure>
+                            <img class="image" src="${item.download_url}" alt="${item.author}">
+                            <figcaption>${item.author}</figcaption>
+                        </figure>
+                    `;
+                    images = images + image;
+                });
+
+                imagesNode.innerHTML = images;
+            }
+
+            function showError(text) {
+                errorNode.textContent = text;
+                errorNode.classList.remove('hide');
+            }
+
+            function buildUrl(params) {
+                let url = new URL(apiUrl);
+
+                for (const [key, value] of Object.entries(params)) {
+                    url.searchParams.set(key, value);
+                }
+
+                return url;
+            }
+            
+            async function restoreData() {
+                if (window.localStorage.length) {
+                    const params = {
+                        page: window.localStorage.page,
+                        limit: window.localStorage.limit,
+                    };
+                    let requestUrl = buildUrl(params);
+
+                    await getImages(requestUrl, insertImages);
+                }
+            }
+
+            requestBtn.addEventListener('click', async () => {
+                errorNode.classList.add('hide');
+                let pageNum = pageInput.value;
+                let imgNum = imgInput.value;
+                let valSum = Number(pageNum) + Number(imgNum);
+
+                if (valSum < 1 || valSum > 20) {
+                    let errorText = 'Номер страницы и лимит вне диапазона от 1 до 10 !';
+                    showError(errorText);
+                } else if (pageNum < 1 || pageNum > 10 || isNaN(pageNum)) {
+                    let errorText = 'Номер страницы вне диапазона от 1 до 10 !';
+                    showError(errorText);
+                } else if (imgNum < 1 || imgNum > 10 || isNaN(imgNum)) {
+                    let errorText = 'Лимит картинок вне диапазона от 1 до 10 !';
+                    showError(errorText);
+                } else {
+                    let url = buildUrl({page: pageNum, limit: imgNum});
+                    let success = await getImages(url, insertImages);
+                    
+                    if (success) {
+                        window.localStorage.setItem('page', pageNum);
+                        window.localStorage.setItem('limit', imgNum);
+                    }
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <div class="form">
+        <input type="text" class="img-number input1" size="31" placeholder="Введите номер страницы от 1 до 10">
+        <input type="text" class="img-number input2" size="31" placeholder="Укажите кол-во картинок от 1 до 10">
+        <button class="btn">Подтвердить</button>
+    </div>
+    <p class="error hide"></p>
+    <div class="images"></div>
+</body>
+</html>

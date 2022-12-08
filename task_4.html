@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1" />
+    <title>Asynchronous request</title>
+    <style>
+        .form {
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .img-number {
+            display: block;
+            padding: 5px 2px;
+            margin: 10px 0;
+        }
+        .btn {
+            padding: 5px 10px;
+            display: block;
+            cursor: pointer;
+            margin: auto;
+        }
+        .images {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .image {
+            max-width: 200px;
+        }
+        .error {
+            margin: auto;
+            width: fit-content;
+            padding: 10px;
+            border-radius: 2px;
+            background-color: #f88d8d;
+        }
+        .hide {
+            display: none;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let url = 'https://picsum.photos/';
+            let imagesNode = document.querySelector('.images');
+            let input1 = document.querySelector('.input1');
+            let input2 = document.querySelector('.input2');
+            let errorNode = document.querySelector('.error');
+            const requestBtn = document.querySelector('.btn');
+
+            function getImage(url, callback) {
+                return fetch(url)
+                    .then((response) => response.url)
+                    .then((imgUrl) => {
+                        if(callback) {
+                            callback(imgUrl);
+                        }      
+                    })
+                    .catch((error) => {
+                        let errorText = `Ошибка: ${error}`;
+                        showError(errorText);
+                    });
+            }
+
+            function insertImage(imgUrl) {
+                if (imgUrl) {
+                    let image = `
+                        <figure>
+                            <img class="image" src="${imgUrl}" alt="">
+                        </figure>
+                    `;
+                    imagesNode.innerHTML = image;
+                }
+            }
+
+            function showError(text) {
+                errorNode.textContent = text;
+                errorNode.classList.remove('hide');
+            }
+
+            requestBtn.addEventListener('click', async () => {
+                errorNode.classList.add('hide');
+                let val1 = input1.value;
+                let val2 = input2.value;
+                let valSum = Number(val1) + Number(val2);
+
+                if (valSum < 200 || valSum > 600) {
+                    let errorText = 'Одно из чисел вне диапазона 100-300 !';
+                    showError(errorText);
+                } else if (isNaN(val1) || isNaN(val2)) {
+                    let errorText = 'Одно из значений не является числом!';
+                    showError(errorText);
+                } else {
+                    let finalUrl = `${url}${val1}/${val2}`;
+                    await getImage(finalUrl, insertImage);
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <div class="form">
+        <input type="text" class="img-number input1" size="27" placeholder="Укажите ширину от 100 до 300">
+        <input type="text" class="img-number input2" size="27" placeholder="Укажите длину от 100 до 300">
+        <button class="btn">Подтвердить</button>
+    </div>
+    <p class="error hide"></p>
+    <div class="images"></div>
+</body>
+</html>

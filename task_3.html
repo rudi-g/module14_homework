@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1" />
+    <title>Asynchronous request</title>
+    <style>
+        .form {
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .img-number {
+            display: block;
+            padding: 5px 2px;
+            margin: 10px 0;
+        }
+        .btn {
+            padding: 5px 10px;
+            display: block;
+            cursor: pointer;
+            margin: auto;
+        }
+        .images {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .image {
+            max-width: 200px;
+        }
+        .error {
+            margin: auto;
+            width: fit-content;
+            padding: 10px;
+            border-radius: 2px;
+            background-color: #f88d8d;
+        }
+        .hide {
+            display: none;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let url = 'https://picsum.photos/v2/list?limit=';
+            let imagesNode = document.querySelector('.images');
+            let errorNode = document.querySelector('.error');
+            const requestBtn = document.querySelector('.btn');
+
+            function getImages(url, callback) {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url);
+
+                xhr.onload = function() {
+                    if (xhr.status == 200) {
+                        const response = JSON.parse(xhr.response);
+                        if (callback) {
+                            callback(response);
+                        }
+                    } else {
+                        let errorText = `Ошибка! Статус: ${xhr.status}`;
+                        showError(errorText);
+                    }
+                }
+
+                xhr.onerror = function() {
+                    let errorText = `Ошибка! Статус: ${xhr.status}`;
+                    showError(errorText);
+                }
+
+                xhr.send();
+            }
+
+            function insertImages(response) {
+                let images = '';
+
+                response.forEach(item => {
+                    let image = `
+                        <figure>
+                            <img class="image" src="${item.download_url}" alt="${item.author}">
+                            <figcaption>${item.author}</figcaption>
+                        </figure>
+                    `;
+                    images = images + image;
+                });
+
+                imagesNode.innerHTML = images;
+            }
+
+            function showError(text) {
+                errorNode.textContent = text;
+                errorNode.classList.remove('hide');
+            }
+
+            requestBtn.addEventListener('click', () => {
+                const inputValue = document.querySelector('.img-number').value;
+                errorNode.classList.add('hide');
+
+                if (inputValue <= 0 || inputValue > 10) {
+                    let errorText = 'Введенное число вне диапазона 1-10 !';
+                    showError(errorText);
+                } else if (isNaN(inputValue)) {
+                    let errorText = 'Введенное значение не является числом!';
+                    showError(errorText);
+                } else {
+                    getImages(url+inputValue, insertImages);
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <div class="form">
+        <input type="text" class="img-number" size="23" placeholder="Введите число от 1 до 10">
+        <button class="btn">Подтвердить</button>
+    </div>
+    <p class="error hide"></p>
+    <div class="images"></div>
+</body>
+</html>
